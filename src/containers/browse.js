@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Fuse from 'fuse.js';
+import { signOut } from 'firebase/auth';
 import { Card, Header, Loading, Player } from '../components';
 import * as ROUTES from '../constants/routes';
 import logo from '../logo.svg';
@@ -28,15 +29,23 @@ export function BrowseContainer({ slides }) {
   }, [slides, category]);
 
   useEffect(() => {
-    const fuse = new Fuse(slideRows, { keys: ['data.description', 'data.title', 'data.genre'] });
-    const results = fuse.search(searchTerm).map(({ item }) => item);
+    if (searchTerm.length > 3) {
+      const fuse = new Fuse(slides[category], { keys: ['data.description', 'data.title', 'data.genre'] });
+      const results = fuse.search(searchTerm).map(({ item }) => item);
 
-    if (slideRows.length > 0 && searchTerm.length > 3 && results.length > 0) {
-      setSlideRows(results);
+      if (results.length > 0) {
+        setSlideRows(results);
+      } else {
+        setSlideRows(slides[category]);
+      }
     } else {
       setSlideRows(slides[category]);
     }
-  }, [searchTerm]);
+  }, [searchTerm, category, slides]);
+
+  const handleSignOut = async () => {
+    await signOut(firebase.auth());
+  };
 
   return profile.displayName ? (
     <>
@@ -63,7 +72,7 @@ export function BrowseContainer({ slides }) {
                   <Header.TextLink>{user.displayName}</Header.TextLink>
                 </Header.Group>
                 <Header.Group>
-                  <Header.TextLink onClick={() => firebase.auth().signOut()}>Sign out</Header.TextLink>
+                  <Header.TextLink onClick={handleSignOut}>Sign out</Header.TextLink>
                 </Header.Group>
               </Header.Dropdown>
             </Header.Profile>

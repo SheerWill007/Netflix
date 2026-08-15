@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { FirebaseContext } from '../context/firebase';
 import { Form } from '../components';
 import { HeaderContainer } from '../containers/header';
@@ -7,7 +8,7 @@ import { FooterContainer } from '../containers/footer';
 import * as ROUTES from '../constants/routes';
 
 export default function SignUp() {
-  const history = useHistory();
+  const navigate = useNavigate();
   const { firebase } = useContext(FirebaseContext);
 
   const [firstName, setFirstName] = useState('');
@@ -17,28 +18,22 @@ export default function SignUp() {
 
   const isInvalid = firstName === '' || password === '' || emailAddress === '';
 
-  const handleSignup = (event) => {
+  const handleSignup = async (event) => {
     event.preventDefault();
 
-    return firebase
-      .auth()
-      .createUserWithEmailAndPassword(emailAddress, password)
-      .then((result) =>
-        result.user
-          .updateProfile({
-            displayName: firstName,
-            photoURL: Math.floor(Math.random() * 5) + 1,
-          })
-          .then(() => {
-            history.push(ROUTES.BROWSE);
-          })
-      )
-      .catch((error) => {
-        setFirstName('');
-        setEmailAddress('');
-        setPassword('');
-        setError(error.message);
+    try {
+      const result = await createUserWithEmailAndPassword(firebase.auth(), emailAddress, password);
+      await updateProfile(result.user, {
+        displayName: firstName,
+        photoURL: Math.floor(Math.random() * 5) + 1,
       });
+      navigate(ROUTES.BROWSE);
+    } catch (error) {
+      setFirstName('');
+      setEmailAddress('');
+      setPassword('');
+      setError(error.message);
+    }
   };
 
   return (

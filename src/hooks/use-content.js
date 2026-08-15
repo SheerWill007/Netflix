@@ -1,4 +1,5 @@
 import { useEffect, useState, useContext } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
 import { FirebaseContext } from '../context/firebase';
 
 export default function useContent(target) {
@@ -6,21 +7,20 @@ export default function useContent(target) {
   const { firebase } = useContext(FirebaseContext);
 
   useEffect(() => {
-    firebase
-      .firestore()
-      .collection(target)
-      .get()
-      .then((snapshot) => {
-        const allContent = snapshot.docs.map((contentObj) => ({
-          ...contentObj.data(),
-          docId: contentObj.id,
+    const fetchContent = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(firebase.firestore(), target));
+        const allContent = querySnapshot.docs.map((doc) => ({
+          ...doc.data(),
+          docId: doc.id,
         }));
-
         setContent(allContent);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.log(error.message);
-      });
+      }
+    };
+
+    fetchContent();
   }, []);
 
   return { [target]: content };
